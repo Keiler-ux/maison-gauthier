@@ -87,6 +87,11 @@
 
         .modal-backdrop.active {
             display: block;
+            overflow: hidden;
+        }
+
+        body.modal-open {
+            overflow: hidden;
         }
 
         .modal {
@@ -228,6 +233,309 @@
             color: white;
             border-color: #3B82F6;
         }
+
+        /* Optimisation pour mobile (iPhone) */
+        @media (max-width: 640px) {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            main {
+                padding-top: 80px;
+                padding-bottom: 20px;
+                padding-left: 8px;
+                padding-right: 8px;
+                margin: 0;
+            }
+
+            /* Conteneur calendrier */
+            .bg-white.rounded-2xl.shadow-lg {
+                padding: 12px !important;
+                border-radius: 12px;
+            }
+
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* En-têtes */
+            h1 {
+                font-size: 28px !important;
+                margin-bottom: 8px;
+                line-height: 1.2;
+            }
+
+            h2 {
+                font-size: 20px !important;
+            }
+
+            h3 {
+                font-size: 16px !important;
+            }
+
+            p {
+                font-size: 13px !important;
+            }
+
+            /* Calendrier */
+            .calendar-grid {
+                gap: 2px;
+                grid-template-columns: repeat(7, 1fr);
+            }
+
+            .calendar-day {
+                aspect-ratio: 1;
+                padding: 4px;
+                border-radius: 8px;
+                font-size: 11px;
+            }
+
+            .day-number {
+                font-size: 12px;
+                margin-bottom: 2px;
+            }
+
+            .event-tag {
+                font-size: 9px;
+                padding: 1px 4px;
+                margin-bottom: 1px;
+                margin-right: 1px;
+                display: block;
+                max-width: 100%;
+                width: 100%;
+                white-space: normal;
+                text-overflow: clip;
+                overflow: hidden;
+            }
+
+            .event-indicator {
+                font-size: 9px;
+                line-height: 1.1;
+            }
+
+            /* Forcer une colonne sur mobile */
+            .lg\\:col-span-3,
+            .lg\\:col-span-1 {
+                grid-column: auto !important;
+            }
+
+            /* Calendrier hebdomadaire */
+            .calendar-week {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 2px;
+            }
+
+            .calendar-day-week {
+                min-height: 80px;
+                padding: 4px;
+                font-size: 11px;
+            }
+
+            .week-day-header {
+                font-size: 10px;
+                padding: 6px 0;
+            }
+
+            /* Modal */
+            .modal {
+                width: 95%;
+                max-width: 100%;
+                max-height: 90vh;
+                padding: 16px;
+                border-radius: 12px;
+                overflow-y: auto;
+                top: 50% !important;
+                left: 50% !important;
+            }
+
+            .modal form {
+                font-size: 14px;
+            }
+
+            .modal input,
+            .modal select,
+            .modal textarea {
+                font-size: 16px;
+                padding: 10px !important;
+                border-radius: 8px;
+            }
+
+            .modal label {
+                font-size: 13px !important;
+            }
+
+            .modal button {
+                font-size: 14px;
+                padding: 10px 16px !important;
+            }
+
+            /* Panneau événements */
+            .lg\\:sticky.lg\\:top-28 {
+                position: static !important;
+                top: auto !important;
+            }
+
+            .event-item {
+                padding: 10px;
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            /* Boutons */
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
+
+            /* Navigation */
+            nav {
+                padding: 12px 16px !important;
+            }
+
+            .font-bold.tracking-widest {
+                font-size: 12px !important;
+            }
+
+            /* Header pour la navigation mois/année */
+            .flex.items-center.justify-between {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .view-toggle {
+                width: 100%;
+                gap: 4px;
+            }
+
+            .view-toggle button {
+                font-size: 11px;
+                padding: 4px 8px;
+                flex: 1;
+            }
+
+            /* Gap et spacing */
+            .gap-6 {
+                gap: 8px !important;
+            }
+
+            .gap-4 {
+                gap: 8px !important;
+            }
+
+            .mb-8 {
+                margin-bottom: 12px !important;
+            }
+
+            .mb-4 {
+                margin-bottom: 8px !important;
+            }
+
+            .mb-2 {
+                margin-bottom: 4px !important;
+            }
+
+            .p-8 {
+                padding: 12px !important;
+            }
+
+            .p-6 {
+                padding: 12px !important;
+            }
+
+            .px-6 {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            .py-4 {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+
+            /* En-têtes de section */
+            .text-4xl {
+                font-size: 24px !important;
+            }
+
+            .text-2xl {
+                font-size: 18px !important;
+            }
+
+            .text-lg {
+                font-size: 15px !important;
+            }
+
+            .text-sm {
+                font-size: 12px !important;
+            }
+
+            .text-xs {
+                font-size: 10px !important;
+            }
+
+            /* Flexbox pour les petits écrans */
+            .flex.flex-col.md\\:flex-row {
+                flex-direction: column;
+            }
+
+            .flex.gap-3 {
+                gap: 6px !important;
+                flex-direction: column;
+            }
+
+            .flex.gap-3 button {
+                width: 100%;
+            }
+
+            /* Input time sur mobile */
+            input[type="time"],
+            input[type="date"] {
+                font-size: 16px; /* Évite le zoom sur iOS */
+            }
+
+            /* Fix pour le gap sur les inputs */
+            .flex.items-center.gap-2 {
+                gap: 8px;
+            }
+
+            /* Affichage sur très petits écrans */
+        }
+
+        @media (max-width: 375px) {
+            .modal {
+                width: 98%;
+                padding: 12px;
+            }
+
+            .text-sm {
+                font-size: 11px !important;
+            }
+
+            .text-xs {
+                font-size: 9px !important;
+            }
+
+            h1 {
+                font-size: 22px !important;
+            }
+
+            .view-toggle button {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+
+            .calendar-day {
+                padding: 3px;
+                font-size: 10px;
+            }
+
+            .event-tag {
+                font-size: 8px;
+                padding: 0.5px 3px;
+            }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-gray-200">
@@ -279,21 +587,21 @@
             
             <!-- Calendrier principal -->
             <div class="lg:col-span-3">
-                <div class="bg-white rounded-2xl shadow-lg p-8">
+                <div class="bg-white rounded-2xl shadow-lg p-8 overflow-x-auto">
                     <!-- Navigation mois/année -->
-                    <div class="flex items-center justify-between mb-8">
-                        <button id="prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                    <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+                        <button id="prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition shrink-0">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
                         </button>
-                        <h2 id="month-year" class="text-2xl font-bold min-w-fit">Janvier 2024</h2>
-                        <button id="next-month" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                        <h2 id="month-year" class="text-2xl font-bold min-w-fit text-center">Janvier 2024</h2>
+                        <button id="next-month" class="p-2 hover:bg-gray-100 rounded-lg transition shrink-0">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </button>
-                        <div class="view-toggle">
+                        <div class="view-toggle w-full md:w-auto">
                             <button id="view-month" class="active">Mensuel</button>
                             <button id="view-week">Hebdomadaire</button>
                         </div>
@@ -319,7 +627,7 @@
 
             <!-- Panneau latéral événements -->
             <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-28">
+                <div class="bg-white rounded-2xl shadow-lg p-6 lg:sticky lg:top-28">
                     <h3 class="text-lg font-bold mb-4">Événements</h3>
                     
                     <button id="add-event-btn" class="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition mb-4 flex items-center justify-center gap-2">
@@ -763,6 +1071,7 @@
             }
             document.getElementById('event-modal').classList.add('active');
             document.getElementById('modal-backdrop').classList.add('active');
+            document.body.classList.add('modal-open');
         }
 
         function openEventModal(event) {
@@ -789,11 +1098,13 @@
             document.getElementById('delete-event-btn').classList.remove('hidden');
             document.getElementById('event-modal').classList.add('active');
             document.getElementById('modal-backdrop').classList.add('active');
+            document.body.classList.add('modal-open');
         }
 
         function closeModal() {
             document.getElementById('event-modal').classList.remove('active');
             document.getElementById('modal-backdrop').classList.remove('active');
+            document.body.classList.remove('modal-open');
             selectedEvent = null;
         }
 
