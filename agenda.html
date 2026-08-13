@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda - La Maison Gauthier</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -748,19 +749,59 @@
     </div>
 
     <script>
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://vycloqcfpqhmzanjmhat.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5Y2xvcWNmcHFobXphbmptaGF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MjE1NjAsImV4cCI6MjEwMjE5NzU2MH0.liLskwIeSwEzRpYsfZOAPVkpN1Ruv53iE1Kz0LY3YHw';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // État du calendrier
         let currentDate = new Date();
         let currentView = 'month'; // 'month' ou 'week'
-        let events = JSON.parse(localStorage.getItem('agendaEvents')) || [
-            { id: 1, date: '2026-08-20', endDate: null, title: 'Réunion famille', author: 'Marie', startTime: '14:00', endTime: null, type: 'default', desc: '', allDay: false },
-            { id: 2, date: '2026-08-25', endDate: null, title: 'Anniversaire Claire', author: 'Jean', startTime: null, endTime: null, type: 'anniversary', desc: '', allDay: true },
-            { id: 3, date: '2026-09-10', endDate: '2026-09-12', title: 'Week-end escapade', author: 'Pierre', startTime: null, endTime: null, type: 'trip', desc: '', allDay: true }
-        ];
+        let events = [];
         let selectedEvent = null;
+        let isLoading = false;
+
+        // Charger les événements au démarrage
+        async function initializeCalendar() {
+            isLoading = true;
+            await loadEventsFromSupabase();
+            renderCalendar();
+            renderEventsList();
+            setupRealtimeListener();
+            isLoading = false;
+        }
+
+        // Charger les événements depuis Supabase
+        async function loadEventsFromSupabase() {
+            try {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .order('date', { ascending: true });
+                
+                if (error) throw error;
+                events = data || [];
+            } catch (err) {
+                console.error('Erreur lors du chargement des événements:', err);
+                events = [];
+            }
+        }
+
+        // Écouter les changements en temps réel
+        function setupRealtimeListener() {
+            const subscription = supabase
+                .channel('events_changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, async (payload) => {
+                    console.log('Changement détecté:', payload);
+                    await loadEventsFromSupabase();
+                    renderCalendar();
+                    renderEventsList();
+                })
+                .subscribe();
+        }
 
         // Initialisation
-        renderCalendar();
-        renderEventsList();
+        initializeCalendar();
 
         // Gestion de la case "Jour entier"
         document.getElementById('event-all-day').addEventListener('change', (e) => {
@@ -955,7 +996,7 @@
             
             if (dayEvents.length > 0) {
                 dayEvents.forEach(e => {
-                    const isMultiDay = e.endDate && e.endDate !== e.date;
+                    const isMultiDay = e.end_date && e.end_date !== e.date;
                     html += `<div class="event-tag ${isMultiDay ? 'multi-day' : ''}" title="${e.author}: ${e.title}">${e.author}: ${e.title}</div>`;
                 });
             }
@@ -968,7 +1009,7 @@
         function getEventsForDate(dateStr) {
             return events.filter(e => {
                 const eventStart = e.date;
-                const eventEnd = e.endDate || e.date;
+                const eventEnd = e.end_date || e.date;
                 return dateStr >= eventStart && dateStr <= eventEnd;
             });
         }
@@ -992,18 +1033,18 @@
                 const dateStr = eventDate.toLocaleDateString('fr-FR', { weekday: 'short', month: 'short', day: 'numeric' });
                 
                 let dateRange = dateStr;
-                if (event.endDate && event.endDate !== event.date) {
-                    const endDate = new Date(event.endDate);
+                if (event.end_date && event.end_date !== event.date) {
+                    const endDate = new Date(event.end_date);
                     const endDateStr = endDate.toLocaleDateString('fr-FR', { weekday: 'short', month: 'short', day: 'numeric' });
                     dateRange = `${dateStr} → ${endDateStr}`;
                 }
                 
                 // Affichage de l'heure
                 let timeDisplay = '';
-                if (!event.allDay && event.startTime) {
-                    timeDisplay = event.startTime;
-                    if (event.endTime) {
-                        timeDisplay += ` - ${event.endTime}`;
+                if (!event.all_day && event.start_time) {
+                    timeDisplay = event.start_time;
+                    if (event.end_time) {
+                        timeDisplay += ` - ${event.end_time}`;
                     }
                 }
                 
@@ -1049,17 +1090,17 @@
                     eventEl.className = `event-item type-${event.type} cursor-pointer`;
                     
                     let timeDisplay = '';
-                    if (!event.allDay && event.startTime) {
-                        timeDisplay = event.startTime;
-                        if (event.endTime) {
-                            timeDisplay += ` - ${event.endTime}`;
+                    if (!event.all_day && event.start_time) {
+                        timeDisplay = event.start_time;
+                        if (event.end_time) {
+                            timeDisplay += ` - ${event.end_time}`;
                         }
                     }
                     
                     let eventInfo = `<div class="font-semibold text-sm">${event.title}</div>
                         <div class="text-xs text-gray-500">Par ${event.author}${timeDisplay ? ' · ' + timeDisplay : ''}</div>`;
-                    if (event.desc) {
-                        eventInfo += `<div class="text-xs text-gray-500 mt-1">${event.desc}</div>`;
+                    if (event.description) {
+                        eventInfo += `<div class="text-xs text-gray-500 mt-1">${event.description}</div>`;
                     }
                     
                     eventEl.innerHTML = `
@@ -1109,21 +1150,21 @@
             document.getElementById('event-title').value = event.title;
             document.getElementById('event-author').value = event.author || '';
             document.getElementById('event-date').value = event.date;
-            document.getElementById('event-end-date').value = event.endDate || '';
-            document.getElementById('event-all-day').checked = event.allDay || false;
-            document.getElementById('event-start-time').value = event.startTime || '';
-            document.getElementById('event-end-time').value = event.endTime || '';
+            document.getElementById('event-end-date').value = event.end_date || '';
+            document.getElementById('event-all-day').checked = event.all_day || false;
+            document.getElementById('event-start-time').value = event.start_time || '';
+            document.getElementById('event-end-time').value = event.end_time || '';
             
             // Afficher/masquer les champs de temps
             const timeFields = document.getElementById('time-fields');
-            if (event.allDay) {
+            if (event.all_day) {
                 timeFields.style.display = 'none';
             } else {
                 timeFields.style.display = 'block';
             }
             
             document.getElementById('event-type').value = event.type;
-            document.getElementById('event-desc').value = event.desc || '';
+            document.getElementById('event-desc').value = event.description || '';
             document.getElementById('delete-event-btn').classList.remove('hidden');
             document.getElementById('event-modal').classList.add('active');
             document.getElementById('modal-backdrop').classList.add('active');
@@ -1151,46 +1192,95 @@
 
             if (selectedEvent) {
                 // Modification
-                selectedEvent.title = title;
-                selectedEvent.author = author;
-                selectedEvent.date = date;
-                selectedEvent.endDate = endDate || null;
-                selectedEvent.allDay = allDay;
-                selectedEvent.startTime = allDay ? null : (startTime || null);
-                selectedEvent.endTime = allDay ? null : (endTime || null);
-                selectedEvent.type = type;
-                selectedEvent.desc = desc;
-            } else {
-                // Création
-                events.push({
-                    id: Math.max(0, ...events.map(e => e.id)) + 1,
+                updateEventInSupabase({
+                    id: selectedEvent.id,
                     title,
                     author,
                     date,
-                    endDate: endDate || null,
-                    allDay,
-                    startTime: allDay ? null : (startTime || null),
-                    endTime: allDay ? null : (endTime || null),
+                    end_date: endDate || null,
+                    all_day: allDay,
+                    start_time: allDay ? null : (startTime || null),
+                    end_time: allDay ? null : (endTime || null),
                     type,
-                    desc
+                    description: desc
+                });
+            } else {
+                // Création
+                createEventInSupabase({
+                    title,
+                    author,
+                    date,
+                    end_date: endDate || null,
+                    all_day: allDay,
+                    start_time: allDay ? null : (startTime || null),
+                    end_time: allDay ? null : (endTime || null),
+                    type,
+                    description: desc
                 });
             }
+        }
 
-            localStorage.setItem('agendaEvents', JSON.stringify(events));
-            renderCalendar();
-            renderEventsList();
-            closeModal();
+        // Créer un événement dans Supabase
+        async function createEventInSupabase(eventData) {
+            try {
+                const { error } = await supabase
+                    .from('events')
+                    .insert([eventData]);
+                
+                if (error) throw error;
+                closeModal();
+                await loadEventsFromSupabase();
+                renderCalendar();
+                renderEventsList();
+            } catch (err) {
+                console.error('Erreur lors de la création:', err);
+                alert('Erreur lors de la création de l\'événement');
+            }
+        }
+
+        // Mettre à jour un événement dans Supabase
+        async function updateEventInSupabase(eventData) {
+            try {
+                const { error } = await supabase
+                    .from('events')
+                    .update(eventData)
+                    .eq('id', eventData.id);
+                
+                if (error) throw error;
+                closeModal();
+                await loadEventsFromSupabase();
+                renderCalendar();
+                renderEventsList();
+            } catch (err) {
+                console.error('Erreur lors de la mise à jour:', err);
+                alert('Erreur lors de la mise à jour de l\'événement');
+            }
         }
 
         document.getElementById('delete-event-btn').addEventListener('click', () => {
             if (selectedEvent && confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
-                events = events.filter(e => e.id !== selectedEvent.id);
-                localStorage.setItem('agendaEvents', JSON.stringify(events));
-                renderCalendar();
-                renderEventsList();
-                closeModal();
+                deleteEventFromSupabase(selectedEvent.id);
             }
         });
+
+        // Supprimer un événement de Supabase
+        async function deleteEventFromSupabase(eventId) {
+            try {
+                const { error } = await supabase
+                    .from('events')
+                    .delete()
+                    .eq('id', eventId);
+                
+                if (error) throw error;
+                closeModal();
+                await loadEventsFromSupabase();
+                renderCalendar();
+                renderEventsList();
+            } catch (err) {
+                console.error('Erreur lors de la suppression:', err);
+                alert('Erreur lors de la suppression de l\'événement');
+            }
+        }
     </script>
 </body>
 </html>

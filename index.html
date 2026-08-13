@@ -6,6 +6,7 @@
     <title>La Maison Gauthier. </title>
     <!-- Tailwind CSS via CDN pour le style (reproduit la flexibilité de Framer) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
         
@@ -204,55 +205,80 @@
         });
     }
 
+    // Configuration Supabase
+    const SUPABASE_URL = 'https://vycloqcfpqhmzanjmhat.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5Y2xvcWNmcHFobXphbmptaGF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MjE1NjAsImV4cCI6MjEwMjE5NzU2MH0.liLskwIeSwEzRpYsfZOAPVkpN1Ruv53iE1Kz0LY3YHw';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     // Charger et afficher les événements à venir des 2 prochains jours
-    function loadUpcomingEvents() {
+    async function loadUpcomingEvents() {
         const container = document.getElementById('upcoming-events-container');
-        const events = JSON.parse(localStorage.getItem('agendaEvents')) || [];
         
-        // Obtenir aujourd'hui et demain
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const twoDaysLater = new Date(today);
-        twoDaysLater.setDate(twoDaysLater.getDate() + 2);
-        twoDaysLater.setHours(23, 59, 59, 999);
-        
-        const todayStr = today.toISOString().split('T')[0];
-        const twoDaysStr = twoDaysLater.toISOString().split('T')[0];
-        
-        // Filtrer les événements des 2 prochains jours
-        const upcomingEvents = events.filter(event => {
-            return event.date >= todayStr && event.date <= twoDaysStr;
-        }).sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        // Afficher les événements
-        if (upcomingEvents.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">Aucun événement à venir pour le moment.</p>';
-        } else {
-            let html = '<div class="space-y-3">';
-            upcomingEvents.forEach(event => {
-                const eventDate = new Date(event.date);
-                const dateStr = eventDate.toLocaleDateString('fr-FR', { 
-                    weekday: 'short', 
-                    day: 'numeric', 
-                    month: 'short' 
-                });
-                
-                let timeDisplay = '';
-                if (!event.allDay && event.startTime) {
-                    timeDisplay = ` · ${event.startTime}`;
-                }
-                
-                const authorDisplay = event.author ? ` (${event.author})` : '';
-                html += `<div class="text-sm border-l-2 border-blue-500 pl-3 py-1">
-                    <div class="font-medium text-gray-900">${event.title}${authorDisplay}</div>
-                    <div class="text-xs text-gray-500">${dateStr}${timeDisplay}</div>
-                </div>`;
+        try {
+            // Obtenir aujourd'hui et demain
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const twoDaysLater = new Date(today);
+            twoDaysLater.setDate(twoDaysLater.getDate() + 2);
+            twoDaysLater.setHours(23, 59, 59, 999);
+            
+            const todayStr = today.toISOString().split('T')[0];
+            const twoDaysStr = twoDaysLater.toISOString().split('T')[0];
+            
+            // Charger les événements depuis Supabase
+            const { data: events, error } = await supabase
+                .from('events')
+                .select('*')
+                .order('date', { ascending: true });
+            
+            if (error) throw error;
+            
+            // Filtrer les événements des 2 prochains jours
+            const upcomingEvents = (events || []).filter(event => {
+                return event.date >= todayStr && event.date <= twoDaysStr;
             });
-            html += '</div>';
-            container.innerHTML = html;
+            
+            // Afficher les événements
+            if (upcomingEvents.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Aucun événement à venir pour le moment.</p>';
+            } else {
+                let html = '<div class="space-y-3">';
+                upcomingEvents.forEach(event => {
+                    const eventDate = new Date(event.date);
+                    const dateStr = eventDate.toLocaleDateString('fr-FR', { 
+                        weekday: 'short', 
+                        day: 'numeric', 
+                        month: 'short' 
+                    });
+                    
+                    let timeDisplay = '';
+                    if (!event.all_day && event.start_time) {
+                        timeDisplay = ` · ${event.start_time}`;
+                    }
+                    
+                    const authorDisplay = event.author ? ` (${event.author})` : '';
+                    html += `<div class="text-sm border-l-2 border-blue-500 pl-3 py-1">
+                        <div class="font-medium text-gray-900">${event.title}${authorDisplay}</div>
+                        <div class="text-xs text-gray-500">${dateStr}${timeDisplay}</div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        } catch (err) {
+            console.error('Erreur lors du chargement des événements:', err);
+            container.innerHTML = '<p class="text-gray-500 text-sm">Erreur lors du chargement</p>';
         }
     }
+
+    // Écouter les changements en temps réel depuis Supabase
+    const subscription = supabase
+        .channel('events_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+            loadUpcomingEvents();
+        })
+        .subscribe();
     
     // Charger les événements au chargement de la page
     loadUpcomingEvents();
