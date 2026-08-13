@@ -370,6 +370,18 @@
                 <label for="event-all-day" class="text-sm font-semibold cursor-pointer">Jour entier</label>
             </div>
 
+            <div id="time-fields" class="space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Heure de début</label>
+                    <input type="time" id="event-start-time" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Heure de fin (optionnel)</label>
+                    <input type="time" id="event-end-time" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-semibold mb-2">Date de fin (optionnel)</label>
                 <input type="date" id="event-end-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
@@ -403,15 +415,27 @@
         let currentDate = new Date();
         let currentView = 'month'; // 'month' ou 'week'
         let events = JSON.parse(localStorage.getItem('agendaEvents')) || [
-            { id: 1, date: '2026-08-20', endDate: null, title: 'Réunion famille', author: 'Marie', type: 'default', desc: '', allDay: true },
-            { id: 2, date: '2026-08-25', endDate: null, title: 'Anniversaire Claire', author: 'Jean', type: 'anniversary', desc: '', allDay: true },
-            { id: 3, date: '2026-09-10', endDate: '2026-09-12', title: 'Week-end escapade', author: 'Pierre', type: 'trip', desc: '', allDay: true }
+            { id: 1, date: '2026-08-20', endDate: null, title: 'Réunion famille', author: 'Marie', startTime: '14:00', endTime: null, type: 'default', desc: '', allDay: false },
+            { id: 2, date: '2026-08-25', endDate: null, title: 'Anniversaire Claire', author: 'Jean', startTime: null, endTime: null, type: 'anniversary', desc: '', allDay: true },
+            { id: 3, date: '2026-09-10', endDate: '2026-09-12', title: 'Week-end escapade', author: 'Pierre', startTime: null, endTime: null, type: 'trip', desc: '', allDay: true }
         ];
         let selectedEvent = null;
 
         // Initialisation
         renderCalendar();
         renderEventsList();
+
+        // Gestion de la case "Jour entier"
+        document.getElementById('event-all-day').addEventListener('change', (e) => {
+            const timeFields = document.getElementById('time-fields');
+            if (e.target.checked) {
+                timeFields.style.display = 'none';
+                document.getElementById('event-start-time').value = '';
+                document.getElementById('event-end-time').value = '';
+            } else {
+                timeFields.style.display = 'block';
+            }
+        });
 
         // Navigation
         document.getElementById('prev-month').addEventListener('click', () => {
@@ -637,10 +661,19 @@
                     dateRange = `${dateStr} → ${endDateStr}`;
                 }
                 
+                // Affichage de l'heure
+                let timeDisplay = '';
+                if (!event.allDay && event.startTime) {
+                    timeDisplay = event.startTime;
+                    if (event.endTime) {
+                        timeDisplay += ` - ${event.endTime}`;
+                    }
+                }
+                
                 eventEl.innerHTML = `
                     <div>
                         <div class="font-semibold text-sm">${event.title}</div>
-                        <div class="text-xs text-gray-500">${event.author} · ${dateRange}</div>
+                        <div class="text-xs text-gray-500">${event.author} · ${dateRange}${timeDisplay ? ' · ' + timeDisplay : ''}</div>
                     </div>
                     <button class="text-gray-400 hover:text-gray-600 edit-btn" data-id="${event.id}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -678,8 +711,16 @@
                     const eventEl = document.createElement('div');
                     eventEl.className = `event-item type-${event.type} cursor-pointer`;
                     
+                    let timeDisplay = '';
+                    if (!event.allDay && event.startTime) {
+                        timeDisplay = event.startTime;
+                        if (event.endTime) {
+                            timeDisplay += ` - ${event.endTime}`;
+                        }
+                    }
+                    
                     let eventInfo = `<div class="font-semibold text-sm">${event.title}</div>
-                        <div class="text-xs text-gray-500">Par ${event.author}</div>`;
+                        <div class="text-xs text-gray-500">Par ${event.author}${timeDisplay ? ' · ' + timeDisplay : ''}</div>`;
                     if (event.desc) {
                         eventInfo += `<div class="text-xs text-gray-500 mt-1">${event.desc}</div>`;
                     }
@@ -715,6 +756,7 @@
             document.getElementById('modal-title').textContent = 'Nouvel événement';
             document.getElementById('event-form').reset();
             document.getElementById('event-all-day').checked = true;
+            document.getElementById('time-fields').style.display = 'none';
             document.getElementById('delete-event-btn').classList.add('hidden');
             if (dateStr) {
                 document.getElementById('event-date').value = dateStr;
@@ -731,6 +773,17 @@
             document.getElementById('event-date').value = event.date;
             document.getElementById('event-end-date').value = event.endDate || '';
             document.getElementById('event-all-day').checked = event.allDay || false;
+            document.getElementById('event-start-time').value = event.startTime || '';
+            document.getElementById('event-end-time').value = event.endTime || '';
+            
+            // Afficher/masquer les champs de temps
+            const timeFields = document.getElementById('time-fields');
+            if (event.allDay) {
+                timeFields.style.display = 'none';
+            } else {
+                timeFields.style.display = 'block';
+            }
+            
             document.getElementById('event-type').value = event.type;
             document.getElementById('event-desc').value = event.desc || '';
             document.getElementById('delete-event-btn').classList.remove('hidden');
@@ -751,6 +804,8 @@
             const date = document.getElementById('event-date').value;
             const endDate = document.getElementById('event-end-date').value;
             const allDay = document.getElementById('event-all-day').checked;
+            const startTime = document.getElementById('event-start-time').value;
+            const endTime = document.getElementById('event-end-time').value;
             const type = document.getElementById('event-type').value;
             const desc = document.getElementById('event-desc').value;
 
@@ -761,6 +816,8 @@
                 selectedEvent.date = date;
                 selectedEvent.endDate = endDate || null;
                 selectedEvent.allDay = allDay;
+                selectedEvent.startTime = allDay ? null : (startTime || null);
+                selectedEvent.endTime = allDay ? null : (endTime || null);
                 selectedEvent.type = type;
                 selectedEvent.desc = desc;
             } else {
@@ -772,6 +829,8 @@
                     date,
                     endDate: endDate || null,
                     allDay,
+                    startTime: allDay ? null : (startTime || null),
+                    endTime: allDay ? null : (endTime || null),
                     type,
                     desc
                 });
