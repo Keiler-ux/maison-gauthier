@@ -106,6 +106,9 @@
             z-index: 50;
             width: 90%;
             max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
 
@@ -341,12 +344,16 @@
             .modal {
                 width: 95%;
                 max-width: 100%;
-                max-height: 90vh;
-                padding: 16px;
+                max-height: 80vh;
+                padding: 12px;
                 border-radius: 12px;
                 overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
                 top: 50% !important;
                 left: 50% !important;
+                top: auto !important;
+                bottom: auto !important;
+                transform: translate(-50%, -50%) !important;
             }
 
             .modal form {
@@ -357,17 +364,39 @@
             .modal select,
             .modal textarea {
                 font-size: 16px;
-                padding: 10px !important;
-                border-radius: 8px;
+                padding: 8px !important;
+                border-radius: 6px;
             }
 
             .modal label {
-                font-size: 13px !important;
+                font-size: 12px !important;
+                margin-bottom: 4px !important;
+            }
+
+            .modal div {
+                margin-bottom: 8px !important;
+            }
+
+            .modal .space-y-4 {
+                gap: 8px !important;
+            }
+
+            .modal form > div {
+                margin-bottom: 6px !important;
+            }
+
+            /* Titre du modal réduit */
+            .modal .flex.justify-between {
+                margin-bottom: 12px !important;
+            }
+
+            .modal .text-2xl {
+                font-size: 16px !important;
             }
 
             .modal button {
-                font-size: 14px;
-                padding: 10px 16px !important;
+                font-size: 12px;
+                padding: 8px 12px !important;
             }
 
             /* Panneau événements */
