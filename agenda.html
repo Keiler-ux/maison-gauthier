@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda - La Maison Gauthier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FCFCFC 0%, #F8F8F8 100%);
+            color: #1A1A1A;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            background: white;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calendar-day:hover {
+            border-color: #3B82F6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .calendar-day.other-month {
+            background: #F9FAFB;
+            color: #D1D5DB;
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            border-color: #2563EB;
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-day.selected {
+            background: #DBEAFE;
+            border-color: #3B82F6;
+        }
+
+        .event-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .event-indicator {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+
+        .modal-backdrop.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            z-index: 50;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .event-item {
+            padding: 12px;
+            background: #F3F4F6;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .event-item.type-anniversary {
+            border-left-color: #EC4899;
+        }
+
+        .event-item.type-lunch {
+            border-left-color: #F59E0B;
+        }
+
+        .event-item.type-trip {
+            border-left-color: #10B981;
+        }
+
+        .week-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .week-day-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: #6B7280;
+            padding: 8px 0;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-gray-200">
+
+    <!-- Navigation avec Menu Mobile -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <nav class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <div class="font-bold tracking-widest text-sm uppercase">Gauthier</div>
+            
+            <!-- Menu Bureau (Caché sur mobile) -->
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+                <a href="index.html" class="hover:text-gray-900 transition">Accueil</a>
+                <a href="page.html" class="hover:text-gray-900 transition">Albums</a>
+                <a href="agenda.html" class="text-gray-900 transition">Agenda</a>
+                <a href="courses.html" class="hover:text-gray-900 transition">Courses</a>
+            </div>
+
+            <!-- Bouton Hamburger (Caché sur bureau) -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    <path id="close-icon" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </nav>
+
+        <!-- Menu Mobile Déroulant (Caché par défaut) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 shadow-lg absolute w-full left-0">
+            <div class="flex flex-col px-6 py-4 space-y-4 text-center text-sm font-medium text-gray-500">
+                <a href="index.html" class="block hover:text-gray-900 py-2">Accueil</a>
+                <a href="page.html" class="block hover:text-gray-900 py-2">Albums</a>
+                <a href="agenda.html" class="block hover:text-gray-900 py-2">Agenda</a>
+                <a href="courses.html" class="block hover:text-gray-900 py-2">Courses</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-24 pb-20 px-4 md:px-6 max-w-6xl mx-auto">
+        
+        <!-- En-tête avec navigation -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold mb-2">Agenda partagé</h1>
+            <p class="text-gray-500">Les anniversaires, déjeuners et escapades à ne pas oublier.</p>
+        </div>
+
+        <!-- Conteneur principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Calendrier principal -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <!-- Navigation mois/année -->
+                    <div class="flex items-center justify-between mb-8">
+                        <button id="prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <h2 id="month-year" class="text-2xl font-bold min-w-fit">Janvier 2024</h2>
+                        <button id="next-month" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Jours de la semaine -->
+                    <div class="week-header mb-4">
+                        <div class="week-day-header">Lun</div>
+                        <div class="week-day-header">Mar</div>
+                        <div class="week-day-header">Mer</div>
+                        <div class="week-day-header">Jeu</div>
+                        <div class="week-day-header">Ven</div>
+                        <div class="week-day-header">Sam</div>
+                        <div class="week-day-header">Dim</div>
+                    </div>
+
+                    <!-- Grille du calendrier -->
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- Générée par JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panneau latéral événements -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-28">
+                    <h3 class="text-lg font-bold mb-4">Événements</h3>
+                    
+                    <button id="add-event-btn" class="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition mb-4 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Ajouter
+                    </button>
+
+                    <div id="events-list" class="space-y-2 max-h-96 overflow-y-auto">
+                        <!-- Générée par JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal pour ajouter/modifier un événement -->
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="event-modal" class="modal">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-title" class="text-2xl font-bold">Nouvel événement</h3>
+            <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <form id="event-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold mb-2">Titre</label>
+                <input type="text" id="event-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-2">Date</label>
+                <input type="date" id="event-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-2">Type</label>
+                <select id="event-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <option value="default">Normal</option>
+                    <option value="anniversary">Anniversaire</option>
+                    <option value="lunch">Déjeuner</option>
+                    <option value="trip">Escapade</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-2">Description (optionnel)</label>
+                <textarea id="event-desc" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" rows="3"></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition">Enregistrer</button>
+                <button type="button" id="delete-event-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition hidden">Supprimer</button>
+                <button type="button" id="modal-cancel" class="flex-1 bg-gray-200 text-gray-900 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">Annuler</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // État du calendrier
+        let currentDate = new Date();
+        let events = JSON.parse(localStorage.getItem('agendaEvents')) || [
+            { id: 1, date: '2024-01-15', title: 'Réunion famille', type: 'default', desc: '' },
+            { id: 2, date: '2024-01-25', title: 'Anniversaire Claire', type: 'anniversary', desc: '' },
+            { id: 3, date: '2024-02-10', title: 'Déjeuner dimanche', type: 'lunch', desc: '' }
+        ];
+        let selectedEvent = null;
+
+        // Initialisation
+        renderCalendar();
+        renderEventsList();
+
+        // Navigation
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Modales
+        document.getElementById('add-event-btn').addEventListener('click', openNewEventModal);
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('modal-cancel').addEventListener('click', closeModal);
+        document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+        document.getElementById('event-form').addEventListener('submit', saveEvent);
+
+        // Menu mobile
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const menu = document.getElementById('mobile-menu');
+            const hamburger = document.getElementById('hamburger-icon');
+            const close = document.getElementById('close-icon');
+            menu.classList.toggle('hidden');
+            hamburger.classList.toggle('hidden');
+            close.classList.toggle('hidden');
+        });
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Mise à jour du titre
+            const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            document.getElementById('month-year').textContent = `${monthNames[month]} ${year}`;
+
+            // Premier jour du mois et nombre de jours
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            // Jours du mois précédent
+            for (let i = firstDay === 0 ? 6 : firstDay - 1; i > 0; i--) {
+                const day = daysInPrevMonth - i + 1;
+                createDayElement(grid, day, true, new Date(year, month - 1, day));
+            }
+
+            // Jours du mois actuel
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                createDayElement(grid, day, false, date);
+            }
+
+            // Jours du mois suivant
+            const remainingDays = 42 - grid.children.length;
+            for (let day = 1; day <= remainingDays; day++) {
+                createDayElement(grid, day, true, new Date(year, month + 1, day));
+            }
+        }
+
+        function createDayElement(grid, day, isOtherMonth, dateObj) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            const dateStr = dateObj.toISOString().split('T')[0];
+            const dayEvents = events.filter(e => e.date === dateStr);
+            const isToday = dateObj.toDateString() === new Date().toDateString();
+
+            if (isOtherMonth) {
+                dayElement.classList.add('other-month');
+            }
+            if (isToday) {
+                dayElement.classList.add('today');
+            }
+
+            dayElement.innerHTML = `<div class="day-number">${day}</div>`;
+            
+            if (dayEvents.length > 0) {
+                dayElement.innerHTML += `<div class="event-indicator">${dayEvents.length} événement${dayEvents.length > 1 ? 's' : ''}</div>`;
+            }
+
+            dayElement.addEventListener('click', () => openDayEvents(dateStr, dateObj));
+            grid.appendChild(dayElement);
+        }
+
+        function renderEventsList() {
+            const today = new Date().toISOString().split('T')[0];
+            const upcomingEvents = events.filter(e => e.date >= today).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const list = document.getElementById('events-list');
+            list.innerHTML = '';
+
+            if (upcomingEvents.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Aucun événement</p>';
+                return;
+            }
+
+            upcomingEvents.forEach(event => {
+                const eventEl = document.createElement('div');
+                eventEl.className = `event-item type-${event.type}`;
+                const eventDate = new Date(event.date);
+                const dateStr = eventDate.toLocaleDateString('fr-FR', { weekday: 'short', month: 'short', day: 'numeric' });
+                
+                eventEl.innerHTML = `
+                    <div>
+                        <div class="font-semibold text-sm">${event.title}</div>
+                        <div class="text-xs text-gray-500">${dateStr}</div>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600 edit-btn" data-id="${event.id}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </button>
+                `;
+
+                eventEl.querySelector('.edit-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const eventToEdit = events.find(ev => ev.id === parseInt(event.id));
+                    openEventModal(eventToEdit);
+                });
+
+                list.appendChild(eventEl);
+            });
+        }
+
+        function openDayEvents(dateStr, dateObj) {
+            const dayEvents = events.filter(e => e.date === dateStr);
+            const dateStr_formatted = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            const list = document.getElementById('events-list');
+            list.innerHTML = '';
+
+            const header = document.createElement('div');
+            header.className = 'mb-4 pb-4 border-b';
+            header.innerHTML = `<h4 class="font-semibold text-gray-700">${dateStr_formatted}</h4>`;
+            list.appendChild(header);
+
+            if (dayEvents.length === 0) {
+                list.innerHTML += '<p class="text-gray-500 text-sm">Aucun événement</p>';
+            } else {
+                dayEvents.forEach(event => {
+                    const eventEl = document.createElement('div');
+                    eventEl.className = `event-item type-${event.type} cursor-pointer`;
+                    eventEl.innerHTML = `
+                        <div class="flex-1">
+                            <div class="font-semibold text-sm">${event.title}</div>
+                            ${event.desc ? `<div class="text-xs text-gray-500 mt-1">${event.desc}</div>` : ''}
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600 edit-btn" data-id="${event.id}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    `;
+                    eventEl.querySelector('.edit-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const eventToEdit = events.find(ev => ev.id === parseInt(event.id));
+                        openEventModal(eventToEdit);
+                    });
+                    list.appendChild(eventEl);
+                });
+            }
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'w-full mt-4 bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition flex items-center justify-center gap-2';
+            addBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Ajouter';
+            addBtn.addEventListener('click', () => openNewEventModal(dateStr));
+            list.appendChild(addBtn);
+        }
+
+        function openNewEventModal(dateStr) {
+            selectedEvent = null;
+            document.getElementById('modal-title').textContent = 'Nouvel événement';
+            document.getElementById('event-form').reset();
+            document.getElementById('delete-event-btn').classList.add('hidden');
+            if (dateStr) {
+                document.getElementById('event-date').value = dateStr;
+            }
+            document.getElementById('event-modal').classList.add('active');
+            document.getElementById('modal-backdrop').classList.add('active');
+        }
+
+        function openEventModal(event) {
+            selectedEvent = event;
+            document.getElementById('modal-title').textContent = 'Modifier l\'événement';
+            document.getElementById('event-title').value = event.title;
+            document.getElementById('event-date').value = event.date;
+            document.getElementById('event-type').value = event.type;
+            document.getElementById('event-desc').value = event.desc || '';
+            document.getElementById('delete-event-btn').classList.remove('hidden');
+            document.getElementById('event-modal').classList.add('active');
+            document.getElementById('modal-backdrop').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('event-modal').classList.remove('active');
+            document.getElementById('modal-backdrop').classList.remove('active');
+            selectedEvent = null;
+        }
+
+        function saveEvent(e) {
+            e.preventDefault();
+            const title = document.getElementById('event-title').value;
+            const date = document.getElementById('event-date').value;
+            const type = document.getElementById('event-type').value;
+            const desc = document.getElementById('event-desc').value;
+
+            if (selectedEvent) {
+                // Modification
+                selectedEvent.title = title;
+                selectedEvent.date = date;
+                selectedEvent.type = type;
+                selectedEvent.desc = desc;
+            } else {
+                // Création
+                events.push({
+                    id: Math.max(0, ...events.map(e => e.id)) + 1,
+                    title,
+                    date,
+                    type,
+                    desc
+                });
+            }
+
+            localStorage.setItem('agendaEvents', JSON.stringify(events));
+            renderCalendar();
+            renderEventsList();
+            closeModal();
+        }
+
+        document.getElementById('delete-event-btn').addEventListener('click', () => {
+            if (selectedEvent && confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+                events = events.filter(e => e.id !== selectedEvent.id);
+                localStorage.setItem('agendaEvents', JSON.stringify(events));
+                renderCalendar();
+                renderEventsList();
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
+        </section>
+
+        <!-- Liste des Événements -->
+        <section class="space-y-4">
+            <h2 class="text-sm font-bold text-gray-400 tracking-wider uppercase mb-6 fade-up delay-100">À venir</h2>
+
+            <!-- Carte Événement 1 -->
+            <div class="framer-card fade-up delay-100 bg-white border border-gray-100 rounded-3xl p-6 flex flex-col md:flex-row md:items-center gap-6">
+                <!-- Date -->
+                <div class="bg-gray-50 rounded-2xl p-4 min-w-[80px] text-center border border-gray-100 shrink-0">
+                    <span class="block text-xs font-bold text-red-500 uppercase tracking-widest">Août</span>
+                    <span class="block text-3xl font-bold text-gray-900 mt-1">29</span>
+                </div>
+                <!-- Info -->
+                <div class="flex-grow">
+                    <h3 class="text-xl font-semibold text-gray-900">Week-end en Bretagne</h3>
+                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">Sortie prévue vers Brest / Porspoder. Départ tôt le matin.</p>
+                </div>
+                <!-- Heure/Statut -->
+                <div class="text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full whitespace-nowrap">
+                    Week-end complet
+                </div>
+            </div>
+
+            <!-- Carte Événement 2 -->
+            <div class="framer-card fade-up delay-200 bg-white border border-gray-100 rounded-3xl p-6 flex flex-col md:flex-row md:items-center gap-6">
+                <!-- Date -->
+                <div class="bg-gray-50 rounded-2xl p-4 min-w-[80px] text-center border border-gray-100 shrink-0">
+                    <span class="block text-xs font-bold text-blue-500 uppercase tracking-widest">Sept</span>
+                    <span class="block text-3xl font-bold text-gray-900 mt-1">12</span>
+                </div>
+                <!-- Info -->
+                <div class="flex-grow">
+                    <h3 class="text-xl font-semibold text-gray-900">Trail 40km & Retrouvailles</h3>
+                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">Jour de course le matin, puis déjeuner de famille tous ensemble.</p>
+                </div>
+                <!-- Heure/Statut -->
+                <div class="text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full whitespace-nowrap">
+                    Dès 08h00
+                </div>
+            </div>
+
+            <!-- Carte Événement 3 -->
+            <div class="framer-card fade-up delay-300 bg-white border border-gray-100 rounded-3xl p-6 flex flex-col md:flex-row md:items-center gap-6">
+                <!-- Date -->
+                <div class="bg-gray-50 rounded-2xl p-4 min-w-[80px] text-center border border-gray-100 shrink-0">
+                    <span class="block text-xs font-bold text-green-500 uppercase tracking-widest">Oct</span>
+                    <span class="block text-3xl font-bold text-gray-900 mt-1">04</span>
+                </div>
+                <!-- Info -->
+                <div class="flex-grow">
+                    <h3 class="text-xl font-semibold text-gray-900">Anniversaire d'Erwin</h3>
+                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">Penser à préparer un message ou organiser un appel de groupe.</p>
+                </div>
+                <!-- Heure/Statut -->
+                <div class="text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full whitespace-nowrap">
+                    À ne pas oublier
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Pied de page (Identique à l'accueil) -->
+    <footer class="border-t border-gray-100 mt-10">
+        <div class="max-w-5xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 font-medium">
+            <p>Archives de famille · depuis 2026</p>
+            <a href="https://www.famileo.com/web-family/#/family/message" target="_blank" class="hover:text-gray-900 transition mt-4 md:mt-0">Écrire à la famille</a>
+        </div>
+    </footer>
+
+    <!-- Script de défilement (Identique à l'accueil) -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { 
+                threshold: 0.1,
+                rootMargin: "0px 0px -20px 0px"
+            });
+
+            document.querySelectorAll('.fade-up').forEach((el) => {
+                observer.observe(el);
+            });
+        });
+    // Gestion du menu mobile
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const hamburgerIcon = document.getElementById('hamburger-icon');
+    const closeIcon = document.getElementById('close-icon');
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            // Basculer l'affichage du menu
+            mobileMenu.classList.toggle('hidden');
+            
+            // Basculer entre l'icône "3 barres" et la croix "X"
+            hamburgerIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        });
+    }
+    </script>
+</body>
+</html>

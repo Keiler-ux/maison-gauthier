@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Albums - La Maison Gauthier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FCFCFC;
+            color: #1A1A1A;
+        }
+
+        /* --- ANIMATIONS --- */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-up.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .delay-100 { transition-delay: 100ms; }
+        
+        /* Conteneur Iframe */
+        .drive-container {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+            background-color: #F9FAFB;
+        }
+        .drive-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-gray-200">
+
+    <!-- Navigation avec Menu Mobile -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-[#FCFCFC]/90 backdrop-blur-md border-b border-gray-100">
+        <nav class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <div class="font-bold tracking-widest text-sm uppercase">Gauthier</div>
+            
+            <!-- Menu Bureau (Caché sur mobile) -->
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+                <a href="index.html" class="hover:text-gray-900 transition">Accueil</a>
+                <a href="page.html" class="hover:text-gray-900 transition">Albums</a>
+                <a href="agenda.html" class="hover:text-gray-900 transition">Agenda</a>
+                <a href="courses.html" class="hover:text-gray-900 transition">Courses</a>
+            </div>
+
+            <!-- Bouton Hamburger (Caché sur bureau) -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    <path id="close-icon" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </nav>
+
+        <!-- Menu Mobile Déroulant (Caché par défaut) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#FCFCFC] border-t border-gray-100 shadow-lg absolute w-full left-0">
+            <div class="flex flex-col px-6 py-4 space-y-4 text-center text-sm font-medium text-gray-500">
+                <a href="index.html" class="block hover:text-gray-900 py-2">Accueil</a>
+                <a href="page.html" class="block hover:text-gray-900 py-2">Albums</a>
+                <a href="agenda.html" class="block hover:text-gray-900 py-2">Agenda</a>
+                <a href="courses.html" class="block hover:text-gray-900 py-2">Courses</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-6 max-w-5xl mx-auto space-y-12">
+        
+        <!-- En-tête de la page -->
+        <section class="text-center space-y-6 fade-up is-visible flex flex-col items-center">
+            <h1 class="text-4xl md:text-5xl font-semibold tracking-tight">
+                Souvenirs partagés
+            </h1>
+            <p class="text-lg text-gray-500 max-w-xl mx-auto">
+                Retrouvez les photos et petites histoires qui nous rassemblent. Ce dossier s'actualise automatiquement.
+            </p>
+            
+            <!-- Bouton pour ajouter des photos (Ouvre Drive dans un nouvel onglet) -->
+            <a href="https://drive.google.com/drive/folders/1dG-TuhZM9UYaQsn--Zd3H9M1x31J08A8?usp=drive_link" target="_blank" 
+               class="mt-4 inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full text-sm font-semibold hover:bg-gray-800 transition shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Ajouter des photos
+            </a>
+        </section>
+
+        <!-- Intégration Google Drive -->
+        <section class="fade-up delay-100">
+            <div class="drive-container">
+                <!-- L'ID du dossier est : 1dG-TuhZM9UYaQsn--Zd3H9M1x31J08A8 -->
+                <iframe src="https://drive.google.com/embeddedfolderview?id=1dG-TuhZM9UYaQsn--Zd3H9M1x31J08A8#grid" title="Dossier Google Drive La Maison Gauthier"></iframe>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-4">
+                Affichage synchronisé en direct avec Google Drive.
+            </p>
+        </section>
+
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="border-t border-gray-100 mt-10">
+        <div class="max-w-5xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 font-medium">
+            <p>Archives de famille · depuis 2026</p>
+            <a href="https://www.famileo.com/web-family/#/family/message" target="_blank" class="hover:text-gray-900 transition mt-4 md:mt-0">Écrire à la famille</a>
+        </div>
+    </footer>
+
+    <!-- Script de défilement -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: "0px 0px -20px 0px" });
+
+            document.querySelectorAll('.fade-up').forEach((el) => observer.observe(el));
+        });
+    // Gestion du menu mobile
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const hamburgerIcon = document.getElementById('hamburger-icon');
+    const closeIcon = document.getElementById('close-icon');
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            // Basculer l'affichage du menu
+            mobileMenu.classList.toggle('hidden');
+            
+            // Basculer entre l'icône "3 barres" et la croix "X"
+            hamburgerIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        });
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Maison Gauthier</title>
+    <!-- Tailwind CSS via CDN pour le style (reproduit la flexibilité de Framer) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FCFCFC; /* Couleur de fond douce */
+            color: #1A1A1A;
+        }
+
+        /* --- REPRODUCTION DES ANIMATIONS FRAMER --- */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-up.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .delay-100 { transition-delay: 100ms; }
+        .delay-200 { transition-delay: 200ms; }
+        
+        /* Effet de survol des cartes typique de Framer */
+        .framer-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .framer-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-gray-200">
+
+    <!-- Navigation avec Menu Mobile -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-[#FCFCFC]/90 backdrop-blur-md border-b border-gray-100">
+        <nav class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <div class="font-bold tracking-widest text-sm uppercase">Gauthier</div>
+            
+            <!-- Menu Bureau (Caché sur mobile) -->
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+                <a href="index.html" class="hover:text-gray-900 transition">Accueil</a>
+                <a href="page.html" class="hover:text-gray-900 transition">Albums</a>
+                <a href="agenda.html" class="hover:text-gray-900 transition">Agenda</a>
+                <a href="courses.html" class="hover:text-gray-900 transition">Courses</a>
+            </div>
+
+            <!-- Bouton Hamburger (Caché sur bureau) -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    <path id="close-icon" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </nav>
+
+        <!-- Menu Mobile Déroulant (Caché par défaut) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#FCFCFC] border-t border-gray-100 shadow-lg absolute w-full left-0">
+            <div class="flex flex-col px-6 py-4 space-y-4 text-center text-sm font-medium text-gray-500">
+                <a href="index.html" class="block hover:text-gray-900 py-2">Accueil</a>
+                <a href="page.html" class="block hover:text-gray-900 py-2">Albums</a>
+                <a href="agenda.html" class="block hover:text-gray-900 py-2">Agenda</a>
+                <a href="courses.html" class="block hover:text-gray-900 py-2">Courses</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-6 max-w-5xl mx-auto space-y-24">
+        
+        <!-- Section Héro -->
+        <section class="text-center space-y-6 fade-up is-visible">
+            <div class="inline-block px-3 py-1 bg-gray-100 rounded-full text-xs font-semibold tracking-wider text-gray-600 mb-4 uppercase">
+                La Maison Gauthier
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight max-w-3xl mx-auto leading-tight">
+                Nos souvenirs, nos rendez-vous, notre famille.
+            </h1>
+            <p class="text-lg text-gray-500 max-w-xl mx-auto mt-4">
+                Un espace privé pour garder les moments précieux à portée de main et préparer les prochains à partager.
+            </p>
+            
+            <!-- Image Héro -->
+            <div class="mt-12 rounded-3xl overflow-hidden shadow-2xl fade-up delay-100 border border-gray-100">
+                <img src="https://framerusercontent.com/images/1WOTdiJxW9NcibbRZa3u7LhXM.png?width=2400&height=2000" alt="Maison Gauthier" class="w-full h-auto object-cover max-h-[60vh]">
+            </div>
+        </section>
+
+        <!-- Grille de Navigation (Bento Grid) -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Carte 1 -->
+            <a href="page.html" class="framer-card block p-8 rounded-3xl bg-white border border-gray-100 fade-up">
+                <div class="text-xs font-bold text-gray-400 tracking-wider mb-4 uppercase">Souvenirs</div>
+                <h3 class="text-2xl font-semibold mb-2">Albums partagés</h3>
+                <p class="text-gray-500 mb-8 text-sm leading-relaxed">Retrouvez les photos et petites histoires qui nous rassemblent.</p>
+                <div class="font-medium text-blue-600 text-sm">Ouvrir les albums &rarr;</div>
+            </a>
+
+            <!-- Carte 2 -->
+            <div class="framer-card block p-8 rounded-3xl bg-white border border-gray-100 fade-up delay-100">
+                <div class="text-xs font-bold text-gray-400 tracking-wider mb-4 uppercase">Agenda</div>
+                <h3 class="text-2xl font-semibold mb-2">Calendrier commun</h3>
+                <p class="text-gray-500 mb-8 text-sm leading-relaxed">Les anniversaires, déjeuners et escapades à ne pas oublier.</p>
+                <a href="https://www.famileo.com/register/2ravfz?trk=27" target="_blank" class="font-medium text-blue-600 text-sm block">Voir l’agenda &rarr;</a>
+            </div>
+
+            <!-- Carte 3 -->
+            <a href="https://www.famileo.com/web-family/#/wall" target="_blank" class="framer-card block p-8 rounded-3xl bg-white border border-gray-100 fade-up delay-200">
+                <div class="text-xs font-bold text-gray-400 tracking-wider mb-4 uppercase">Journal</div>
+                <h3 class="text-2xl font-semibold mb-2">Nouvelles de tous</h3>
+                <p class="text-gray-500 mb-8 text-sm leading-relaxed">Quelques mots, une annonce ou une pensée à partager avec les proches.</p>
+                <div class="font-medium text-blue-600 text-sm">Lire les nouvelles &rarr;</div>
+            </a>
+        </section>
+
+        <!-- Section Agenda Partagé -->
+        <section class="fade-up bg-white p-10 rounded-3xl border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+            <div class="max-w-md">
+                <div class="text-xs font-bold text-gray-400 tracking-wider mb-3 uppercase">Agenda partagé</div>
+                <h2 class="text-3xl font-semibold mb-4 tracking-tight">Les prochains moments à vivre ensemble.</h2>
+                <p class="text-gray-500 text-sm leading-relaxed">Ajoutez, modifiez ou supprimez les rendez-vous de la famille : les changements sont partagés instantanément.</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-2xl w-full md:w-auto min-w-[320px] border border-gray-200">
+                <h3 class="font-semibold mb-2 text-sm">Rendez-vous à venir</h3>
+                <p class="text-gray-500 text-sm">Aucun événement à venir pour le moment.</p>
+            </div>
+        </section>
+
+        <!-- Sections Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Drive -->
+            <section class="fade-up bg-[#F6F6F6] p-10 rounded-3xl flex flex-col justify-between items-start gap-8 border border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 tracking-tight">Ajouter de nouveaux souvenirs</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Déposez vos photos dans le dossier partagé pour que toute la famille puisse en profiter.</p>
+                </div>
+                <a href="https://drive.google.com/drive/folders/1dG-TuhZM9UYaQsn--Zd3H9M1x31J08A8?usp=drive_link" target="_blank" class="bg-white px-6 py-3 rounded-full text-sm font-semibold shadow-sm hover:shadow-md transition">Ajouter des photos</a>
+            </section>
+
+            <!-- Famileo -->
+            <section class="fade-up delay-100 bg-[#EEF2FF] p-10 rounded-3xl flex flex-col justify-between items-start gap-8 border border-blue-50">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 tracking-tight">Le journal de la famille</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Partagez les nouvelles et retrouvez les mots de chacun dans notre espace Famileo.</p>
+                </div>
+                <a href="https://www.famileo.com/web-family/#/wall" target="_blank" class="bg-white px-6 py-3 rounded-full text-sm font-semibold shadow-sm hover:shadow-md transition text-blue-600">Ouvrir Famileo</a>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="border-t border-gray-100 mt-20">
+        <div class="max-w-5xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 font-medium">
+            <p>Archives de famille · depuis 2026</p>
+            <a href="https://www.famileo.com/web-family/#/family/message" target="_blank" class="hover:text-gray-900 transition mt-4 md:mt-0">Écrire à la famille</a>
+        </div>
+    </footer>
+
+    <!-- Script pour déclencher les animations au défilement (équivalent de Framer Motion) -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { 
+                threshold: 0.15,
+                rootMargin: "0px 0px -50px 0px"
+            });
+
+            document.querySelectorAll('.fade-up').forEach((el) => {
+                observer.observe(el);
+            });
+        });
+
+    // Gestion du menu mobile
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const hamburgerIcon = document.getElementById('hamburger-icon');
+    const closeIcon = document.getElementById('close-icon');
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            // Basculer l'affichage du menu
+            mobileMenu.classList.toggle('hidden');
+            
+            // Basculer entre l'icône "3 barres" et la croix "X"
+            hamburgerIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        });
+    }
+    </script>
+</body>
+</html>

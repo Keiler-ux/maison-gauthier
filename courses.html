@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - La Maison Gauthier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importation du client Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #FCFCFC; color: #1A1A1A; }
+        .fade-up { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+        .fade-up.is-visible { opacity: 1; transform: translateY(0); }
+        .grocery-item { transition: background-color 0.2s ease; }
+        .grocery-item:hover { background-color: #F9FAFB; }
+        .grocery-text { position: relative; display: inline-block; transition: color 0.3s ease; }
+        .grocery-text::after {
+            content: ''; position: absolute; left: 0; top: 50%; height: 2px; width: 0%;
+            background-color: #9CA3AF; transition: width 0.3s ease;
+        }
+        /* État Coché géré par une classe CSS (ajoutée via JS) */
+        .is-checked .grocery-text { color: #9CA3AF; }
+        .is-checked .grocery-text::after { width: 100%; }
+        .is-checked .item-category { opacity: 0.5; }
+    </style>
+</head>
+<body class="antialiased selection:bg-gray-200">
+
+    <!-- Navigation avec Menu Mobile -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-[#FCFCFC]/90 backdrop-blur-md border-b border-gray-100">
+        <nav class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <div class="font-bold tracking-widest text-sm uppercase">Gauthier</div>
+            
+            <!-- Menu Bureau (Caché sur mobile) -->
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+                <a href="index.html" class="hover:text-gray-900 transition">Accueil</a>
+                <a href="page.html" class="hover:text-gray-900 transition">Albums</a>
+                <a href="agenda.html" class="hover:text-gray-900 transition">Agenda</a>
+                <a href="courses.html" class="hover:text-gray-900 transition">Courses</a>
+            </div>
+
+            <!-- Bouton Hamburger (Caché sur bureau) -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    <path id="close-icon" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </nav>
+
+        <!-- Menu Mobile Déroulant (Caché par défaut) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#FCFCFC] border-t border-gray-100 shadow-lg absolute w-full left-0">
+            <div class="flex flex-col px-6 py-4 space-y-4 text-center text-sm font-medium text-gray-500">
+                <a href="index.html" class="block hover:text-gray-900 py-2">Accueil</a>
+                <a href="page.html" class="block hover:text-gray-900 py-2">Albums</a>
+                <a href="agenda.html" class="block hover:text-gray-900 py-2">Agenda</a>
+                <a href="courses.html" class="block hover:text-gray-900 py-2">Courses</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 px-6 max-w-2xl mx-auto space-y-12">
+        <section class="text-center space-y-6 fade-up is-visible">
+            <h1 class="text-4xl font-semibold tracking-tight">Liste partagée</h1>
+            <p class="text-gray-500 max-w-xl mx-auto">Cochez les articles une fois achetés. La liste se met à jour pour toute la famille.</p>
+        </section>
+
+        <!-- Barre de progression -->
+        <section class="fade-up bg-white border border-gray-100 rounded-3xl p-6 shadow-sm is-visible">
+            <div class="flex justify-between items-end mb-3">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-400 uppercase">Progression</h2>
+                    <p class="text-sm font-medium mt-1"><span id="items-done">0</span> sur <span id="items-total">0</span> articles</p>
+                </div>
+            </div>
+            <div class="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div id="progress-bar" class="h-full bg-gray-900 w-0 rounded-full transition-all duration-300"></div>
+            </div>
+        </section>
+
+        <!-- Conteneur de la liste qui sera rempli par Supabase -->
+        <section id="grocery-list" class="fade-up bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm is-visible">
+            <div class="p-8 text-center text-gray-400 text-sm" id="loading-message">
+                Chargement de la liste...
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ---------------------------------------------------------
+        // 1. CONFIGURATION SUPABASE (À REMPLIR AVEC TES CLÉS)
+        // ---------------------------------------------------------
+        const SUPABASE_URL = 'https://agukydfodenbztnzlnee.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFndWt5ZGZvZGVuYnp0bnpsbmVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NTA4MzQsImV4cCI6MjEwMjEyNjgzNH0.fZ9xVaF7U8BNnPd4ihjF7ABB2Hw0L3g21ezXokmR9-4';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ---------------------------------------------------------
+        // 2. LOGIQUE DE L'APPLICATION
+        // ---------------------------------------------------------
+        const listContainer = document.getElementById('grocery-list');
+        let groceries = [];
+
+        // Fonction pour récupérer les données depuis Supabase
+        async function fetchGroceries() {
+            const { data, error } = await supabase
+                .from('courses')
+                .select('*')
+                .order('id', { ascending: true }); // Trie par ordre de création
+
+            if (error) {
+                console.error("Erreur de récupération:", error);
+                listContainer.innerHTML = `<div class="p-8 text-red-500 text-center">Erreur de connexion à la base de données.</div>`;
+                return;
+            }
+
+            groceries = data;
+            renderGroceries();
+        }
+
+        // Fonction pour mettre à jour le statut "coché" dans Supabase
+        async function toggleItem(id, currentState) {
+            const newState = !currentState;
+            
+            // Mise à jour de l'UI immédiatement (Optimistic UI)
+            const index = groceries.findIndex(g => g.id === id);
+            if(index !== -1) groceries[index].est_coche = newState;
+            renderGroceries();
+
+            // Mise à jour dans la base de données
+            const { error } = await supabase
+                .from('courses')
+                .update({ est_coche: newState })
+                .eq('id', id);
+
+            if (error) {
+                console.error("Erreur de mise à jour:", error);
+                // En cas d'erreur, on annule l'UI
+                groceries[index].est_coche = currentState;
+                renderGroceries();
+            }
+        }
+
+        // Fonction d'affichage du HTML
+        function renderGroceries() {
+            if (groceries.length === 0) {
+                listContainer.innerHTML = `<div class="p-8 text-center text-gray-500">La liste de courses est vide.</div>`;
+                updateProgress();
+                return;
+            }
+
+            let html = '';
+            groceries.forEach(item => {
+                const checkedAttr = item.est_coche ? 'checked' : '';
+                const checkedClass = item.est_coche ? 'is-checked' : '';
+                
+                html += `
+                <div class="grocery-item border-b border-gray-50 last:border-0 p-5 flex items-center gap-4 ${checkedClass}" onclick="toggleItem(${item.id}, ${item.est_coche})">
+                    <input type="checkbox" ${checkedAttr} class="w-5 h-5 rounded border-gray-300 text-gray-900 cursor-pointer pointer-events-none">
+                    <div class="flex-grow flex flex-col sm:flex-row sm:items-center sm:justify-between w-full cursor-pointer">
+                        <span class="grocery-text text-lg font-medium text-gray-900">${item.nom}</span>
+                        ${item.categorie ? `<span class="item-category mt-1 sm:mt-0 text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full w-max">${item.categorie}</span>` : ''}
+                    </div>
+                </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+            updateProgress();
+        }
+
+        // Met à jour la barre de progression
+        function updateProgress() {
+            const total = groceries.length;
+            const done = groceries.filter(g => g.est_coche).length;
+            
+            document.getElementById('items-total').textContent = total;
+            document.getElementById('items-done').textContent = done;
+
+            const progressBar = document.getElementById('progress-bar');
+            const percentage = total === 0 ? 0 : (done / total) * 100;
+            progressBar.style.width = percentage + '%';
+
+            if (percentage === 100 && total > 0) {
+                progressBar.classList.replace('bg-gray-900', 'bg-green-500');
+            } else {
+                progressBar.classList.replace('bg-green-500', 'bg-gray-900');
+            }
+        }
+
+        // 3. LANCEMENT AU CHARGEMENT DE LA PAGE
+        fetchGroceries();
+
+        // Gestion du menu mobile
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const hamburgerIcon = document.getElementById('hamburger-icon');
+    const closeIcon = document.getElementById('close-icon');
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            // Basculer l'affichage du menu
+            mobileMenu.classList.toggle('hidden');
+            
+            // Basculer entre l'icône "3 barres" et la croix "X"
+            hamburgerIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('hidden');
+        });
+    }
+    </script>
+</body>
+</html>
