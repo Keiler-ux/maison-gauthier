@@ -131,7 +131,9 @@
             </div>
             <div class="bg-gray-50 p-6 rounded-2xl w-full md:w-auto min-w-[320px] border border-gray-200">
                 <h3 class="font-semibold mb-2 text-sm">Rendez-vous à venir</h3>
-                <p class="text-gray-500 text-sm">Aucun événement à venir pour le moment.</p>
+                <div id="upcoming-events-container" class="text-gray-500 text-sm">
+                    <p>Chargement...</p>
+                </div>
             </div>
         </section>
 
@@ -201,6 +203,62 @@
             closeIcon.classList.toggle('hidden');
         });
     }
+
+    // Charger et afficher les événements à venir des 2 prochains jours
+    function loadUpcomingEvents() {
+        const container = document.getElementById('upcoming-events-container');
+        const events = JSON.parse(localStorage.getItem('agendaEvents')) || [];
+        
+        // Obtenir aujourd'hui et demain
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const twoDaysLater = new Date(today);
+        twoDaysLater.setDate(twoDaysLater.getDate() + 2);
+        twoDaysLater.setHours(23, 59, 59, 999);
+        
+        const todayStr = today.toISOString().split('T')[0];
+        const twoDaysStr = twoDaysLater.toISOString().split('T')[0];
+        
+        // Filtrer les événements des 2 prochains jours
+        const upcomingEvents = events.filter(event => {
+            return event.date >= todayStr && event.date <= twoDaysStr;
+        }).sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Afficher les événements
+        if (upcomingEvents.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">Aucun événement à venir pour le moment.</p>';
+        } else {
+            let html = '<div class="space-y-3">';
+            upcomingEvents.forEach(event => {
+                const eventDate = new Date(event.date);
+                const dateStr = eventDate.toLocaleDateString('fr-FR', { 
+                    weekday: 'short', 
+                    day: 'numeric', 
+                    month: 'short' 
+                });
+                
+                let timeDisplay = '';
+                if (!event.allDay && event.startTime) {
+                    timeDisplay = ` · ${event.startTime}`;
+                }
+                
+                const authorDisplay = event.author ? ` (${event.author})` : '';
+                html += `<div class="text-sm border-l-2 border-blue-500 pl-3 py-1">
+                    <div class="font-medium text-gray-900">${event.title}${authorDisplay}</div>
+                    <div class="text-xs text-gray-500">${dateStr}${timeDisplay}</div>
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    }
+    
+    // Charger les événements au chargement de la page
+    loadUpcomingEvents();
+    
+    // Actualiser les événements toutes les minutes
+    setInterval(loadUpcomingEvents, 60000);
     </script>
 </body>
 </html>
